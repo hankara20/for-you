@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Lea Enigma</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,700;1,400&family=Source+Code+Pro:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Source Code Pro', monospace;
+            background-color: #0d0c1d; /* Deep indigo */
+            color: #c0c0c0; /* Silver grey */
+            overflow: hidden;
+        }
+        .font-lora {
+            font-family: 'Lora', serif;
+        }
+        #particles-js {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background-color: #0d0c1d;
+        }
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+        .glass-pane {
+            background: rgba(16, 18, 27, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(129, 140, 248, 0.2);
+            border-radius: 1.5rem; /* More rounded */
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .custom-input {
+            background-color: rgba(129, 140, 248, 0.1);
+            border: 1px solid rgba(129, 140, 248, 0.3);
+            transition: all 0.3s ease;
+        }
+        .custom-input:focus {
+            background-color: rgba(129, 140, 248, 0.2);
+            border-color: #a78bfa;
+            box-shadow: 0 0 15px rgba(167, 139, 250, 0.4);
+        }
+        .custom-btn {
+            background-color: #818cf8; /* Indigo-500 */
+            color: #1e1b4b; /* Indigo-900 */
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+        .custom-btn:hover {
+            background-color: #a78bfa; /* Violet-400 */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(129, 140, 248, 0.3);
+        }
+        .fade-in { animation: fadeIn 1.5s ease-in-out forwards; }
+        .fade-out { animation: fadeOut 1s ease-in-out forwards; }
+        .shake { animation: shake 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-20px); }
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+        /* Style for the acrostic letters */
+        .acrostic-letter {
+            font-size: 2.0em;
+            font-weight: 700;
+            color: #c4b5fd; /* Violet-300 */
+            float: left;
+            margin-right: 0.2em;
+            line-height: 0.8em;
+        }
+        /* Scrollable message container */
+        .message-content {
+            max-height: 60vh;
+            overflow-y: auto;
+            padding-right: 1rem;
+        }
+        /* Custom Scrollbar */
+        .message-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .message-content::-webkit-scrollbar-track {
+            background: rgba(129, 140, 248, 0.1);
+            border-radius: 10px;
+        }
+        .message-content::-webkit-scrollbar-thumb {
+            background: #818cf8;
+            border-radius: 10px;
+        }
+        .message-content::-webkit-scrollbar-thumb:hover {
+            background: #a78bfa;
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div id="particles-js"></div>
+    <div class="content-wrapper min-h-screen flex items-center justify-center p-4">
+
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="text-center max-w-2xl mx-auto fade-in">
+            <div class="glass-pane p-8 md:p-12">
+                <h1 class="text-3xl md:text-4xl font-bold text-indigo-300 mb-2">> ENCRYPTED MEMORY LOG_</h1>
+                <p class="text-lg text-indigo-200 mb-8 font-lora">A message for Lea. Decryption required.</p>
+                <button id="start-btn" class="custom-btn font-bold py-3 px-10 rounded-lg text-lg tracking-wider">INITIATE</button>
+            </div>
+        </div>
+
+        <!-- Puzzle Screen -->
+        <div id="puzzle-container" class="hidden w-full max-w-3xl mx-auto">
+            <div class="glass-pane p-8 md:p-12">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="puzzle-phase" class="text-lg md:text-xl text-indigo-300"></h2>
+                    <p id="progress-text" class="text-indigo-400"></p>
+                </div>
+                <p id="puzzle-text" class="font-lora text-xl md:text-2xl mb-8 leading-relaxed text-gray-200"></p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <input type="text" id="answer-input" class="custom-input w-full sm:w-2/3 text-center text-lg px-4 py-3 rounded-lg text-white focus:outline-none" placeholder="Enter decryption key...">
+                    <button id="submit-btn" class="custom-btn font-bold py-3 px-8 rounded-lg text-lg">DECRYPT</button>
+                </div>
+                <p id="error-message" class="text-red-400 mt-4 h-6 text-center"></p>
+            </div>
+        </div>
+        
+        <!-- Final Message Screen -->
+        <div id="final-message" class="hidden w-full max-w-4xl mx-auto">
+             <div class="glass-pane p-8 md:p-12">
+                <h1 class="text-4xl md:text-5xl font-lora font-bold mb-8 text-violet-300 text-center">The Night of the Sonata</h1>
+                <div class="message-content font-lora text-lg text-gray-200 space-y-6 text-left leading-relaxed">
+                    <p><span class="acrostic-letter">I</span> remember that first night, a conversation that flowed like the very sonata that brought us together. It felt less like meeting someone new and more like remembering someone I’d known for a long time. In a world that can be so loud and chaotic, finding that quiet, shared space with you was, and still is, a rare and beautiful discovery.</p>
+                    <p><span class="acrostic-letter">T</span>hinking back on it, it’s incredible how quickly the walls came down. We talked about everything and nothing, from the grand injustices of the world to the simple joy of spicy food haha. You became the person I wanted to tell everything to, the one whose perspective I was always eager to hear. Those countless chat bubbles are a testament to a connection I never expected.</p>
+                    <p><span class="acrostic-letter">I</span>'ve found a strange sort of home in our late-night talks. It's a place where secret agents can complain about the government, a poet can find his most valued reader, and an artist can share her incredible talent, seriously, I’m no match for you. You’ve listened to my passions and my problems, and you even gave life to my words with your voice, a moment I will never, ever forget.</p>
+                    <p><span class="acrostic-letter">G</span>rown from those first seeds of shared interests is this bond that I cherish more than words can properly express. We’ve navigated the awkwardness, the silences, and the uncertainties, and we’ve come out of it with a promise to keep talking, to keep being honest. That means the world to me.</p>
+                    <p><span class="acrostic-letter">T</span>o say I’m grateful would be an understatement. You’ve inspired me, challenged me, and made me laugh more times than I can count. Seeing you get excited about psychology, hearing about your art, and knowing you’re out there is a constant source of brightness in my life, damn what a statement, but It’s true yk.</p>
+                    <p><span class="acrostic-letter">L</span>ike finding a rare first edition in a dusty bookstore, getting to know you has been a genuine adventure. Your kindness and warmth are not just things you do; they are fundamentally who you are. They radiate through every message and have made me feel truly seen.</p>
+                    <p><span class="acrostic-letter">Y</span>ou have this incredible way of making the distance between our cities feel insignificant. For all the things we haven’t done, like meeting in person or even connecting on IG, the connection we *do* have feels more real and more substantial than almost any other yeah.</p>
+                    <p><span class="acrostic-letter">L</span>ea, leaving this message here is my way of putting all those unspoken thoughts into the world. My hope is simple: that our story continues, filled with more late nights, more shared books, and more laughter. Getting to know you has been one of the best discoveries of my life.</p>
+                    <p class="text-right mt-6 pr-4 not-italic font-lora">-Han-Kara</p> 
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <audio id="bgm" loop>
+        <source src="https://cdn.pixabay.com/audio/2022/11/17/audio_8722425b99.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <!-- Particles.js CDN -->
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const screens = {
+                welcome: document.getElementById('welcome-screen'),
+                puzzle: document.getElementById('puzzle-container'),
+                final: document.getElementById('final-message')
+            };
+            const startBtn = document.getElementById('start-btn');
+            const submitBtn = document.getElementById('submit-btn');
+            const answerInput = document.getElementById('answer-input');
+            const puzzlePhase = document.getElementById('puzzle-phase');
+            const puzzleText = document.getElementById('puzzle-text');
+            const progressText = document.getElementById('progress-text');
+            const errorMessage = document.getElementById('error-message');
+            const bgm = document.getElementById('bgm');
+
+            const puzzles = [
+                // Phase 1
+                { phase: "Phase I: Shared Archives", riddle: "I am not the sun, but I bathe the world in silver. My first movement is a quiet grief, my third a raging storm. Under my spell, two strangers talked until the dawn. What am I?", answer: "moonlight sonata" },
+                { phase: "Phase I: Shared Archives", riddle: "In whispers and code, we play our game. Sometimes rivals, sometimes allies, the mission's the same. We trade intel on corrupt states and broken crowns, living in the shadows of digital towns. What are we?", answer: "secret agents" },
+                { phase: "Phase I: Shared Archives", riddle: "All animals are equal, but some are more equal than others. I tell a story of a rebellion soured, where pigs walk on two legs and ideals are devoured. What book am I?", answer: "animal farm" },
+                { phase: "Phase I: Shared Archives", riddle: "My eighty-eight keys now sleep under a layer of dust, a silent melody of what once was. But your words gave them a new voice, a poet's heart, a reader's choice. What two arts are these?", answer: "piano and poetry" },
+                // Phase 2
+                { phase: "Phase II: Implicit Fragments", riddle: "I am a thread that wasn't sought, a knot of chance, divinely caught. In a sea of fleeting faces and empty text, I was the unexpected, the what-comes-next. What am I?", answer: "an entanglement" },
+                { phase: "Phase II: Implicit Fragments", riddle: "We were two celestial bodies on a lonely flight, then a collision of thought set the dark alight. It wasn't a sound, but a brilliant flash of recognition, burning away the digital ash. What was this spark?", answer: "a shared mind" },
+                { phase: "Phase II: Implicit Fragments", riddle: "The garden we tended was lost in a haze. I couldn't see you through the silent days. The path was obscured, the colors turned to gray, a heavy blanket that kept the words at bay. What was this fog?", answer: "silence" },
+                { phase: "Phase II: Implicit Fragments", riddle: "I was a treasure I thought I'd never find, a melody composed only in my mind. Then it broke the quiet, a gift so true, making my own words feel entirely new. What did I finally hear?", answer: "your voice" },
+                { phase: "Phase II: Implicit Fragments", riddle: "I am a light that flickers on a screen, the closest presence you have ever been, yet miles of wire and earth lie in between. What is our reality?", answer: "close yet far" },
+                // Phase 3
+                { phase: "Phase III: The Core", riddle: "In a world of masks and curated lies, I am the truth you find in someone's digital eyes. I am not forever, I am a passing grace, a moment of pure, unguarded honesty in this boundless place. What is this rare gift?", answer: "genuinity" }
+            ];
+
+            let currentPuzzleIndex = 0;
+
+            function transitionTo(screenToShow) {
+                Object.values(screens).forEach(screen => {
+                    if (screen !== screenToShow) {
+                        screen.classList.add('fade-out');
+                    }
+                });
+
+                setTimeout(() => {
+                    Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+                    screenToShow.classList.remove('hidden', 'fade-out');
+                    screenToShow.classList.add('fade-in');
+                }, 1000);
+            }
+            
+            function loadPuzzle(index) {
+                const puzzleData = puzzles[index];
+                puzzlePhase.textContent = puzzleData.phase;
+                puzzleText.textContent = puzzleData.riddle;
+                progressText.textContent = `LOG [${index + 1}/${puzzles.length}]`;
+                answerInput.value = '';
+                errorMessage.textContent = '';
+                answerInput.focus();
+            }
+
+            startBtn.addEventListener('click', () => {
+                // Play background music on user interaction
+                bgm.play().catch(error => console.log("Audio playback failed: ", error));
+                
+                transitionTo(screens.puzzle);
+                setTimeout(() => loadPuzzle(0), 500); // Load after transition starts
+            });
+
+            function handleSubmit() {
+                const userAnswer = answerInput.value.trim().toLowerCase();
+                if (userAnswer === puzzles[currentPuzzleIndex].answer) {
+                    currentPuzzleIndex++;
+                    screens.puzzle.classList.remove('fade-in');
+                    screens.puzzle.classList.add('fade-out');
+
+                    setTimeout(() => {
+                        if (currentPuzzleIndex < puzzles.length) {
+                            loadPuzzle(currentPuzzleIndex);
+                            screens.puzzle.classList.remove('fade-out');
+                            screens.puzzle.classList.add('fade-in');
+                        } else {
+                            transitionTo(screens.final);
+                        }
+                    }, 1000);
+                } else {
+                    errorMessage.textContent = "DECRYPTION FAILED. KEY INCORRECT.";
+                    answerInput.classList.add('shake');
+                    setTimeout(() => {
+                         errorMessage.textContent = "";
+                         answerInput.classList.remove('shake');
+                    }, 2000);
+                }
+            }
+            
+            submitBtn.addEventListener('click', handleSubmit);
+            answerInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleSubmit();
+            });
+            
+            // Particle.js configuration
+            particlesJS('particles-js', {
+                "particles": {
+                    "number": { "value": 60, "density": { "enable": true, "value_area": 800 } },
+                    "color": { "value": "#818cf8" },
+                    "shape": { "type": "circle" },
+                    "opacity": { "value": 0.4, "random": true, "anim": { "enable": true, "speed": 1, "opacity_min": 0.1, "sync": false } },
+                    "size": { "value": 2, "random": true },
+                    "line_linked": { "enable": false },
+                    "move": { "enable": true, "speed": 0.5, "direction": "none", "random": true, "straight": false, "out_mode": "out", "bounce": false }
+                },
+                "interactivity": {
+                    "detect_on": "canvas",
+                    "events": { "onhover": { "enable": true, "mode": "bubble" }, "onclick": { "enable": false }, "resize": true },
+                    "modes": { "bubble": { "distance": 250, "size": 4, "duration": 2, "opacity": 0.8 } }
+                }, "retina_detect": true
+            });
+        });
+    </script>
+</body>
+</html>
+
